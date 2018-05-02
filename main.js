@@ -69,14 +69,21 @@ function main() {
         adapter.log.info('starting pcap session on interface '+adapter.config.interface);
     }
 
-    var pcap_session = pcap.createSession(adapter.config.interface, "arp");
+    var pcap_session = pcap.createSession(adapter.config.interface, "udp or arp");
 
     pcap_session.on('packet', function (raw_packet) {
         var packet = pcap.decode.packet(raw_packet);
-        if (packet.payload.ethertype === 2054) {
+        if (packet.payload.ethertype === 2054 || packet.payload.ethertype === 2048) {
 
-            var mac = packet.payload.payload.sender_ha.addr;
-            mac = int_array_to_hex(mac);
+            var mac;
+            if (packet.payload.ethertype === 2054) {
+               mac = packet.payload.payload.sender_ha.addr;
+               mac = int_array_to_hex(mac);
+            }
+            
+            if (packet.payload.ethertype === 2048) {
+               mac = packet.payload.shost.toString();
+            }
 
             var nice_mac = mac.replaceAll(":", "-");
             var needle = mac.slice(0, 8).toString().toUpperCase().split(':').join('');
